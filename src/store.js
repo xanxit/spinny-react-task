@@ -6,6 +6,7 @@ import { itemsReducer } from './reducer/itemsReducer';
 
 const initialState = {
     items : [],
+    pagination : {}
 }
 
 const reducer = combineReducers({
