@@ -1,10 +1,34 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import _ from "lodash";
 
 import Card from "./Card";
 import SearchBar from "./SearchBar";
 import { getPagination } from "../actions/getItems";
+
+const LoadMore = ({ setPage, page }) => {
+  return (
+    <div
+      className="flex justify-center cursor-pointer text-white text-3xl"
+      onClick={() => {
+        setPage(page + 1);
+      }}
+    >
+      Load More......
+    </div>
+  );
+};
+
+const Loader = () => {
+  return (
+    <div className="flex items-center justify-center">
+      <div
+        className="spinner-border animate-spin inline-block w-20 h-20 border-4 rounded-full"
+        role="status"
+      ></div>
+    </div>
+  );
+};
 
 const Container = () => {
   const dispatch = useDispatch();
@@ -19,41 +43,36 @@ const Container = () => {
     setAnimeData(items?.items);
   }, [items]);
   useEffect(() => {
-    paginationCall();
+    if (page !== 1) paginationCall();
   }, [page]);
-  const onSearchSubmit = _.memoize(async (term) => {
+  const apRequest = _.memoize(async (term) => {
     setQuery(term);
     const parsedQuery = term.toLowerCase().replaceAll(" ", "+");
     dispatch(getPagination(page, parsedQuery));
+  });
+  const onSearchSubmit = useCallback(async(query) => {
+    await apRequest(query);
   });
 
   return (
     <div className="container">
       <div className="py-4">
-        <SearchBar onSearchSubmit={(term) => onSearchSubmit(term)} setPage={setPage} />
+        <SearchBar
+          onSearchSubmit={(term) => onSearchSubmit(term)}
+          setPage={setPage}
+        />
       </div>
       <div className="grid md:grid-cols-4 grid-cols-2 gap-4 my-4 md:my-8 md:ml-20">
-        {items?.loading ? (
-          <div className="flex items-center justify-center h-80 w-80">
-            <div
-              className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full"
-              role="status"
-            >
-            </div>
-          </div>
-        ) : (
-          animeData?.map((value) => <Card key={value.id} data={value} />)
-        )}
+        {animeData?.map((value) => (
+          <Card key={value.id} data={value} />
+        ))}
       </div>
-      {items?.pagination?.has_next_page === true ? (
-        <div
-          className="flex justify-center cursor-pointer text-white text-3xl"
-          onClick={() => {
-            setPage(page + 1);
-          }}
-        >
-          Load More......
-        </div>
+      {items?.pagination?.has_next_page ? (
+        items?.loading ? (
+          <Loader />
+        ) : (
+          <LoadMore setPage={setPage} page={page} />
+        )
       ) : null}
     </div>
   );
